@@ -210,13 +210,20 @@
           <p class="vb-sec-num">05</p>
           <h2>문의 안내</h2>
         </header>
-        <p>회사 · 매장 · 브랜드에 맞는 제작 문의는 <strong>채널톡</strong>으로 접수해 주시면 영업일 기준 2 ~ 3일 이내 회신드립니다. 아래 <strong>문의 접수</strong> 버튼을 누르시거나 우측 하단 채널톡으로 문의해 주세요.</p>
+        <p>회사 · 매장 · 브랜드에 맞는 제작 문의는 <strong>채널톡</strong>으로 접수해 주시면 영업일 기준 2 ~ 3일 이내 회신드립니다. 아래 양식에 내용을 적어 주신 뒤 <strong>문의 접수</strong>를 누르면 채널톡에 그대로 전달됩니다.</p>
         <ul class="vb-spec">
           <li><span>접수 채널</span><strong>채널톡 (채팅 상담)</strong></li>
           <li><span>회신</span><strong>영업일 2 ~ 3일 이내</strong></li>
-          <li><span>제출 자료</span><strong>레퍼런스 / 사이즈 / 수량 / 사용 환경</strong></li>
+          <li><span>작성 항목</span><strong>문의 내용</strong></li>
         </ul>
-        <a class="vb-btn" href="#" id="company-inquiry" aria-label="채널톡으로 문의 접수">문의 접수 →</a>
+        <form class="vb-inquiry-form" id="company-inquiry-form" novalidate>
+          <p class="vb-inquiry-hint">문의 내용을 미리 작성해 주세요. 접수 시 채널톡 채팅에 아래 내용이 자동으로 입력됩니다.</p>
+          <label class="vb-field vb-field-full">
+            <span class="vb-field-label">문의 내용</span>
+            <textarea id="inquiry-body" name="body" rows="6" placeholder="레퍼런스, 사이즈, 수량, 사용 환경, 희망 일정 등을 자유롭게 적어 주세요."></textarea>
+          </label>
+          <button type="submit" class="vb-btn" id="company-inquiry">문의 접수 →</button>
+        </form>
       </section>
 
     </article>
@@ -229,33 +236,61 @@
     </div>
   </footer>
 
+  <div class="toast" id="app-toast" role="status" aria-live="polite" aria-atomic="true">
+    <svg class="toast-icon toast-icon--success hidden" id="toast-icon-success" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    <svg class="toast-icon toast-icon--guide" id="toast-icon-guide" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+    <span id="toast-msg"></span>
+  </div>
+
   <script>
 (function bootChannelTalk(){
   var key = "6ca8205b-492b-4f44-97fd-f8fa35026101";
   if(!key){ return; }
   ChannelIO("boot", { pluginKey: key });
 
-  var btn = document.getElementById("company-inquiry");
-  if(!btn){ return; }
-  btn.addEventListener("click", function(e){
+  var toastHideTimer = null;
+
+  function showGuideToast(msg){
+    var toast = document.getElementById("app-toast");
+    if(!toast){ return; }
+    if(toastHideTimer){ clearTimeout(toastHideTimer); toastHideTimer = null; }
+    document.getElementById("toast-msg").textContent = msg;
+    toast.classList.remove("toast--success");
+    toast.classList.add("toast--guide");
+    document.getElementById("toast-icon-success").classList.add("hidden");
+    document.getElementById("toast-icon-guide").classList.remove("hidden");
+    toast.classList.remove("visible");
+    void toast.offsetWidth;
+    toast.classList.add("visible");
+    toastHideTimer = setTimeout(function(){
+      toast.classList.remove("visible");
+      toastHideTimer = null;
+    }, 2800);
+  }
+
+  function fieldVal(id){
+    var el = document.getElementById(id);
+    return el && el.value ? el.value.trim() : "";
+  }
+
+  function buildCompanyInquiryMessage(){
+    var body = fieldVal("inquiry-body");
+    return ["[회사소개 · 제작 문의]", "", body].join("\n");
+  }
+
+  var form = document.getElementById("company-inquiry-form");
+  if(!form){ return; }
+  form.addEventListener("submit", function(e){
     e.preventDefault();
-    if(!window.ChannelIO){
-      alert("채널톡이 아직 준비되지 않았습니다.");
+    if(!fieldVal("inquiry-body")){
+      showGuideToast("문의 내용을 입력해 주세요.");
       return;
     }
-    var message = [
-      "[회사소개 · 제작 문의]",
-      "",
-      "안녕하세요. 제작 문의드립니다.",
-      "",
-      "- 레퍼런스:",
-      "- 사이즈:",
-      "- 수량:",
-      "- 사용 환경:",
-      "",
-      "상세 내용을 이어서 작성해 주세요."
-    ].join("\n");
-    ChannelIO("openChat", undefined, message);
+    if(!window.ChannelIO){
+      showGuideToast("채널톡이 아직 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.");
+      return;
+    }
+    ChannelIO("openChat", undefined, buildCompanyInquiryMessage());
   });
 })();
   </script>
